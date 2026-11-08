@@ -1,0 +1,61 @@
+name: Build Musify TV WGT
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Generate WGT
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check Tizen compatibility
+        run: node scripts/check-compat.js
+
+      - name: Run smoke tests
+        run: node scripts/smoke-test.js
+
+      - name: Install ZIP tools
+        run: sudo apt-get update && sudo apt-get install -y zip
+
+      - name: Generate unsigned WGT
+        run: |
+          test -f src/config.xml
+          test -f src/index.html
+          test -f src/icon.png
+          test -f src/css/styles.css
+
+          mkdir -p dist
+
+          cd src
+          zip -X -qr ../dist/MusifyTV-unsigned.wgt . \
+            -x ".git/*" \
+            -x ".buildResult/*"
+
+      - name: Verify WGT
+        run: |
+          test -s dist/MusifyTV-unsigned.wgt
+          unzip -t dist/MusifyTV-unsigned.wgt
+          unzip -l dist/MusifyTV-unsigned.wgt
+
+      - name: Upload WGT
+        uses: actions/upload-artifact@v4
+        with:
+          name: MusifyTV-unsigned-WGT
+          path: dist/MusifyTV-unsigned.wgt
+          if-no-files-found: error
+          retention-days: 30
