@@ -30,7 +30,9 @@ jobs:
         run: node scripts/smoke-test.js
 
       - name: Install ZIP tools
-        run: sudo apt-get update && sudo apt-get install -y zip
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zip unzip
 
       - name: Generate unsigned WGT
         run: |
